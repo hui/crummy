@@ -1,5 +1,3 @@
-# encoding: utf-8
-
 module Crummy
   class StandardRenderer
     include ActionView::Helpers::UrlHelper
@@ -10,18 +8,18 @@ module Crummy
     #
     # Takes 3 options:
     # The output format. Can either be xml or html. Default :html
-    #   :format => (:html|:xml) 
+    #   :format => (:html|:xml)
     # The separator text. It does not assume you want spaces on either side so you must specify. Default +&raquo;+ for :html and +crumb+ for xml
-    #   :separator => string  
+    #   :separator => string
     # Render links in the output. Default +true+
-    #   :link => boolean        
-    # 
+    #   :link => boolean
+    #
     #   Examples:
     #   render_crumbs                         #=> <a href="/">Home</a> &raquo; <a href="/businesses">Businesses</a>
     #   render_crumbs :separator => ' | '     #=> <a href="/">Home</a> | <a href="/businesses">Businesses</a>
     #   render_crumbs :format => :xml         #=> <crumb href="/">Home</crumb><crumb href="/businesses">Businesses</crumb>
     #   render_crumbs :format => :html_list   #=> <ul class="" id=""><li class=""><a href="/">Home</a></li><li class=""><a href="/">Businesses</a></li></ul>
-    #   
+    #
     # With :format => :html_list you can specify additional params: li_class, ul_class, ul_id
     # The only argument is for the separator text. It does not assume you want spaces on either side so you must specify. Defaults to +&raquo;+
     #
@@ -32,6 +30,8 @@ module Crummy
       return '' if options[:skip_if_blank] && crumbs.count < 1
       options[:format] ||= Crummy.configuration.format
       options[:separator] ||= Crummy.configuration.send(:"#{options[:format]}_separator")
+      options[:prepend] ||= Crummy.configuration.send(:"#{options[:format]}_prepend")
+      options[:append] ||= Crummy.configuration.send(:"#{options[:format]}_append")
       options[:links] ||= Crummy.configuration.links
       options[:first_class] ||= Crummy.configuration.first_class
       options[:last_class] ||= Crummy.configuration.last_class
@@ -51,7 +51,7 @@ module Crummy
         options[:ul_class] ||= Crummy.configuration.ul_class
         options[:ul_id] ||= Crummy.configuration.ul_id
         crumb_string = crumbs.collect do |crumb|
-          crumb_to_html_list(crumb, options[:links], options[:li_class], options[:first_class], options[:last_class], (crumb == crumbs.first), (crumb == crumbs.last), options[:microdata], options[:last_crumb_linked], options[:truncate])
+          crumb_to_html_list(crumb, options[:links], options[:li_class], options[:first_class], options[:last_class], (crumb == crumbs.first), (crumb == crumbs.last), options[:microdata], options[:last_crumb_linked], options[:truncate], options[:prepend], options[:append])
         end.reduce { |memo, obj| memo << options[:separator] << obj }
         crumb_string = content_tag(:ul, crumb_string, :class => options[:ul_class], :id => options[:ul_id])
         crumb_string
@@ -85,8 +85,8 @@ module Crummy
         can_link ? link_to((truncate.present? ? name.truncate(truncate) : name), url, link_html_options) : (truncate.present? ? name.truncate(truncate) : name)
       end
     end
-    
-    def crumb_to_html_list(crumb, links, li_class, first_class, last_class, is_first, is_last, with_microdata, last_crumb_linked, truncate)
+
+    def crumb_to_html_list(crumb, links, li_class, first_class, last_class, is_first, is_last, with_microdata, last_crumb_linked, truncate, prepend, append)
       name, url, options = crumb
       options = {} unless options.is_a?(Hash)
       can_link = url && links && (!is_last || last_crumb_linked)
@@ -105,9 +105,9 @@ module Crummy
       else
         html_content = can_link ? link_to((truncate.present? ? name.truncate(truncate) : name), url, options[:link_html_options]) : content_tag(:span, (truncate.present? ? name.truncate(truncate) : name))
       end
-      content_tag(:li, html_content, html_options)
+      content_tag(:li, "#{prepend}#{html_content}#{append}".html_safe, html_options)
     end
-  
+
     def crumb_to_xml(crumb, links, separator, is_first, is_last)
       name, url = crumb
       content_tag(separator, name, :href => (url && links ? url : nil))

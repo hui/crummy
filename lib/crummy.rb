@@ -13,8 +13,12 @@ module Crummy
     attr_accessor :links
     attr_accessor :skip_if_blank
     attr_accessor :html_separator
+    attr_accessor :html_prepend
+    attr_accessor :html_append
     attr_accessor :xml_separator
     attr_accessor :html_list_separator
+    attr_accessor :html_list_prepend
+    attr_accessor :html_list_append
     attr_accessor :first_class
     attr_accessor :last_class
     attr_accessor :ul_id
